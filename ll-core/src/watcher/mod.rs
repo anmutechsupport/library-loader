@@ -13,6 +13,7 @@ use {
         path::PathBuf,
         sync::{mpsc, Arc},
         thread::{self, JoinHandle},
+        process::Command,
     },
 };
 
@@ -82,7 +83,19 @@ impl Watcher {
                                                     log_info!(
                                                         &*loggers_clone,
                                                         format!("Saved to {:?}", save_path)
-                                                    )
+                                                    );
+
+                                                    //  TODO make this not dogshit
+                                                    let refresh_script_path = save_path.as_path().join("../..").join("refresh_libraries.sh");
+
+                                                    let _ = match Command::new("bash").arg(refresh_script_path.as_os_str()).output() {
+                                                            Ok(output) => {
+                                                                log_info!(&*loggers_clone, format!("Refreshed libs: {:?}", output));
+                                                            }
+                                                            Err(e) => {
+                                                                log_error!(&*loggers_clone, format!("Error refreshing libraries: {}, {}", e, refresh_script_path.display()));
+                                                            }
+                                                        };
                                                 }
                                                 Err(e) => {
                                                     log_error!(&*loggers_clone, e)
